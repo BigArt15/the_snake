@@ -25,6 +25,7 @@ APPLE_COLOR = (255, 0, 0)
 
 # Цвет змейки
 SNAKE_COLOR = (0, 255, 0)
+POISON_APPLE_COLOR = (0, 0, 255)
 
 # Скорость движения змейки:
 SPEED = 20
@@ -77,11 +78,12 @@ class Apple(GameObject):
     def __init__(self, body_color):
         super().__init__(body_color)
         self.body_color = body_color
+        self.randomize_position()
 
     def randomize_position(self):
         """Случайным образом ставит яблоко на игровом поле."""
-        apple_x = randrange(0, SCREEN_WIDTH, GRID_SIZE)
-        apple_y = randrange(0, SCREEN_HEIGHT, GRID_SIZE)
+        apple_x = randrange(GRID_WIDTH) * GRID_SIZE
+        apple_y = randrange(GRID_HEIGHT) * GRID_SIZE
         self.position = (apple_x, apple_y)
 
     def draw(self):
@@ -89,6 +91,18 @@ class Apple(GameObject):
         rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
         pygame.draw.rect(screen, self.body_color, rect)
         pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+
+
+class PoisonApple(Apple):
+    """
+    Класс отравленного яблока для змейки, уменьшает её длину на одно
+    деление. Наследует все методы от Apple.
+    """
+
+    def __init__(self, body_color):
+        super().__init__(body_color)
+        self.body_color = body_color
+        self.randomize_position()
 
 
 class Snake(GameObject):
@@ -178,7 +192,7 @@ def handle_keys(game_object):
     При закрытии окна завершает игру.
 
     Args:
-        snake: Экземпляр змейки, для которой меняется направление.
+        game_object: Экземпляр змейки, для которой меняется направление.
     """
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -195,6 +209,13 @@ def handle_keys(game_object):
                 game_object.next_direction = RIGHT
 
 
+def game_reset(snake, apple, poisoin_apple):
+    """Сбрасывает игру в начало."""
+    snake.reset()
+    apple.randomize_position()
+    poisoin_apple.randomize_position()
+
+
 def main():
     """
     Главная функция игры Змейка.
@@ -208,22 +229,38 @@ def main():
     # Инициализация PyGame:
     # Тут нужно создать экземпляры классов.
     apple = Apple(APPLE_COLOR)
-    apple.randomize_position()
     snake = Snake(SNAKE_COLOR, RIGHT)
+    poison_apple = PoisonApple(POISON_APPLE_COLOR)
+    current_speed = SPEED
     while True:
-        clock.tick(SPEED)
-        apple.draw()
-        snake.draw()
+        clock.tick(current_speed)
+        screen.fill(BOARD_BACKGROUND_COLOR)
         handle_keys(snake)
         snake.update_direction()
-        if snake.get_head_position() == apple.position:
-            snake.length += 1
-            apple.randomize_position()
         snake.move()
 
+        # Проверка съедения обычного яблока
+        if snake.get_head_position() == apple.position:
+            snake.length += 1
+            apple.randomize_position()  # нужно с проверкой свободной клетки
+            current_speed += 1
+
+        # Проверка съедения отравленного яблока
+        if snake.get_head_position() == poison_apple.position:
+            if snake.length > 1:
+                snake.length -= 1
+                # Удаляем последний сегмент змейки
+                if len(snake.positions) > snake.length:
+                    snake.last = snake.positions.pop()
+            else:
+                game_reset(snake, apple, poison_apple)
+                current_speed = SPEED
         if snake.get_head_position() in snake.positions[1::]:
-            snake.reset()
-            apple.randomize_position()
+            game_reset(snake, apple, poison_apple)
+            current_speed = SPEED
+        apple.draw()
+        poison_apple.draw()
+        snake.draw()
         pygame.display.update()
 
 
