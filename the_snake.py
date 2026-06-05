@@ -214,6 +214,7 @@ def game_reset(snake, apple, poisoin_apple):
     snake.reset()
     apple.randomize_position()
     poisoin_apple.randomize_position()
+    return SPEED
 
 
 def main():
@@ -238,11 +239,10 @@ def main():
         handle_keys(snake)
         snake.update_direction()
         snake.move()
-
         # Проверка съедения обычного яблока
         if snake.get_head_position() == apple.position:
             snake.length += 1
-            apple.randomize_position()  # нужно с проверкой свободной клетки
+            apple.randomize_position()
             current_speed += 1
 
         # Проверка съедения отравленного яблока
@@ -253,11 +253,9 @@ def main():
                 if len(snake.positions) > snake.length:
                     snake.last = snake.positions.pop()
             else:
-                game_reset(snake, apple, poison_apple)
-                current_speed = SPEED
+                current_speed = game_reset(snake, apple, poison_apple)
         if snake.get_head_position() in snake.positions[1::]:
-            game_reset(snake, apple, poison_apple)
-            current_speed = SPEED
+            current_speed = game_reset(snake, apple, poison_apple)
         apple.draw()
         poison_apple.draw()
         snake.draw()
