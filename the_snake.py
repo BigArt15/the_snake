@@ -50,7 +50,7 @@ class GameObject:
         body_color (tuple[int, int, int]): RGB-цвет объекта.
     """
 
-    def __init__(self, body_color):
+    def __init__(self):
         """
         Инициализирует игровой объект.
 
@@ -58,8 +58,8 @@ class GameObject:
         body_color: Цвет тела объекта в формате (R, G, B).
         """
         self.position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-        self.body_color = body_color
-
+        self.body_color = SNAKE_COLOR
+        
     def draw(self):
         """
         Базовый метод для отрисовки объектов, будет переопредеён
@@ -75,9 +75,9 @@ class Apple(GameObject):
     Появляется в случайной свободной позиции на игровом поле.
     """
 
-    def __init__(self, body_color):
-        super().__init__(body_color)
-        self.body_color = body_color
+    def __init__(self):
+        super().__init__()
+        self.body_color = APPLE_COLOR
         self.randomize_position()
 
     def randomize_position(self):
@@ -99,9 +99,9 @@ class PoisonApple(Apple):
     деление. Наследует все методы от Apple.
     """
 
-    def __init__(self, body_color):
-        super().__init__(body_color)
-        self.body_color = body_color
+    def __init__(self):
+        super().__init__()
+        self.body_color = POISON_APPLE_COLOR
         self.randomize_position()
 
 
@@ -113,15 +113,15 @@ class Snake(GameObject):
     При столкновении с собой сбрасывается до начального состояния.
     """
 
-    def __init__(self, body_color, direction):
-        super().__init__(body_color)
+    def __init__(self):
+        super().__init__()
         self.start_position = self.position
-        self.start_direction = direction
+        self.start_direction = RIGHT
         self.positions = [self.position]
         self.length = 1
-        self.direction = direction
+        self.direction = RIGHT
         self.next_direction = None
-        self.body_color = body_color
+        self.body_color = self.body_color
         self.last = None
 
     def reset(self):
@@ -229,9 +229,9 @@ def main():
 
     # Инициализация PyGame:
     # Тут нужно создать экземпляры классов.
-    apple = Apple(APPLE_COLOR)
-    snake = Snake(SNAKE_COLOR, RIGHT)
-    poison_apple = PoisonApple(POISON_APPLE_COLOR)
+    apple = Apple()
+    snake = Snake()
+    poison_apple = PoisonApple()
     current_speed = SPEED
     while True:
         clock.tick(current_speed)
