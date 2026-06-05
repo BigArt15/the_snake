@@ -59,7 +59,7 @@ class GameObject:
         """
         self.position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         self.body_color = SNAKE_COLOR
-        
+
     def draw(self):
         """
         Базовый метод для отрисовки объектов, будет переопредеён
