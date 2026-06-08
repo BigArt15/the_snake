@@ -219,8 +219,7 @@ def get_free_rect(snake, apple=None):
     for x in range(0, SCREEN_WIDTH, GRID_SIZE):
         for y in range(0, SCREEN_HEIGHT, GRID_SIZE):
             all_rect.add((x, y))
-    free_rect = all_rect - occupied_rect
-    return free_rect
+    return all_rect - occupied_rect
 
 
 def main():
