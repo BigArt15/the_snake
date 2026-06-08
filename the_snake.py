@@ -38,6 +38,7 @@ pg.display.set_caption('Змейка')
 # Настройка времени:
 clock = pg.time.Clock()
 
+
 # Тут опишите все классы игры.
 class GameObject:
     """
@@ -48,15 +49,13 @@ class GameObject:
         body_color (tuple[int, int, int]): RGB-цвет объекта.
     """
 
-    def __init__(self, body_color = None):
-        """
-        Инициализирует игровой объект.
-        """
+    def __init__(self, body_color=None):
+        """Инициализирует игровой объект."""
         self.position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         self.body_color = body_color
 
     def _draw_rect(self, position, color):
-        rect = pg.Rect(position, (GRID_SIZE, GRID_SIZE))        
+        rect = pg.Rect(position, (GRID_SIZE, GRID_SIZE))
         pg.draw.rect(screen, color, rect)
         pg.draw.rect(screen, BORDER_COLOR, rect, 1)
 
@@ -67,6 +66,7 @@ class GameObject:
         """
         raise NotImplementedError
 
+
 class Apple(GameObject):
     """
     Класс яблока — еды для змейки.
@@ -74,19 +74,19 @@ class Apple(GameObject):
     Появляется в случайной свободной позиции на игровом поле.
     """
 
-    def __init__(self, body_color = APPLE_COLOR, free_rect = None):
+    def __init__(self, body_color=APPLE_COLOR, free_rect=None):
         super().__init__(body_color)
-        self.free_rect = free_rect
-        self.randomize_position()
+        self.randomize_position(free_rect)
 
-    def randomize_position(self):
+    def randomize_position(self, free_rect):
         """Случайным образом ставит яблоко на игровом поле."""
-        if self.free_rect:
-            self.position = choice(self.free_rect)
+        if free_rect:
+            self.position = choice(list(free_rect))
         else:
-            apple_x = randrange(0, GRID_WIDTH)
-            apple_y = randrange(0, GRID_HEIGHT)
+            apple_x = randrange(0, GRID_WIDTH) * GRID_SIZE
+            apple_y = randrange(0, GRID_HEIGHT) * GRID_SIZE
             self.position = (apple_x, apple_y)
+
     def draw(self):
         """Рисует яблоко на игровом поле."""
         self._draw_rect(self.position, self.body_color)
@@ -98,9 +98,9 @@ class PoisonApple(Apple):
     деление. Наследует все методы от Apple.
     """
 
-    def __init__(self, body_color = POISON_APPLE_COLOR):
-        super().__init__(body_color)
-        self.randomize_position()
+    def __init__(self, body_color=POISON_APPLE_COLOR, free_rect=None):
+        super().__init__(body_color, free_rect)
+
 
 class Snake(GameObject):
     """
@@ -110,8 +110,8 @@ class Snake(GameObject):
     При столкновении с собой сбрасывается до начального состояния.
     """
 
-    def __init__(self, body_color = SNAKE_COLOR):
-        super().__init__()
+    def __init__(self, body_color=SNAKE_COLOR):
+        super().__init__(body_color)
         self.start_position = self.position
         self.start_direction = RIGHT
         self.positions = [self.position]
@@ -160,11 +160,12 @@ class Snake(GameObject):
         """
         for position in self.positions[:-1]:
             self._draw_rect(position, self.body_color)
-            
+
         self._draw_rect(self.get_head_position(), self.body_color)
         if self.last:
-            self._draw_rect(self.last, BOARD_BACKGROUND_COLOR)
-            
+            last_rect = pg.Rect(self.last, (GRID_SIZE, GRID_SIZE))
+            pg.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
+
     def update_direction(self):
         """
         Применяет запрошенное направление (self.next_direction), если оно
@@ -174,40 +175,43 @@ class Snake(GameObject):
             self.direction = self.next_direction
             self.next_direction = None
 
+
 def handle_keys(game_object):
-    """
-    Обрабатывает события клавиатуры и закрытие окна.
-
-    Изменяет next_direction змейки, предотвращая разворот на 180°.
-    При закрытии окна завершает игру.
-
-    Args:
-        game_object: Экземпляр змейки, для которой меняется направление.
-    """
+    """Применяет нажатия клавиш для управления game_obgect."""
     for event in pg.event.get():
         if event.type == pg.QUIT:
             pg.quit()
             raise SystemExit
-        elif event.type == pg.KEYDOWN:
-            if event.key == pg.K_UP and game_object.direction != DOWN:
-                game_object.next_direction = UP
-            elif event.key == pg.K_DOWN and game_object.direction != UP:
-                game_object.next_direction = DOWN
-            elif event.key == pg.K_LEFT and game_object.direction != RIGHT:
-                game_object.next_direction = LEFT
-            elif event.key == pg.K_RIGHT and game_object.direction != LEFT:
-                game_object.next_direction = RIGHT
 
-def game_reset(snake, apple, poison_apple ):
+        if event.type != pg.KEYDOWN:
+            continue   # guard block
+
+        # Обработка клавиш
+        if event.key == pg.K_ESCAPE:
+            pg.quit()
+            raise SystemExit
+        elif event.key == pg.K_UP and game_object.direction != DOWN:
+            game_object.next_direction = UP
+        elif event.key == pg.K_DOWN and game_object.direction != UP:
+            game_object.next_direction = DOWN
+        elif event.key == pg.K_LEFT and game_object.direction != RIGHT:
+            game_object.next_direction = LEFT
+        elif event.key == pg.K_RIGHT and game_object.direction != LEFT:
+            game_object.next_direction = RIGHT
+
+
+def game_reset(snake, apple, poison_apple):
     """Сбрасывает игру в начало."""
     snake.reset()
-    free_apple = get_free_rect(snake)
-    apple.randomize_position(free_apple)
-    free = get_free_rect(snake, apple=)
-    poison_apple.randomize_position(free)
+    apple.randomize_position(get_free_rect(snake))
+    poison_apple.randomize_position(get_free_rect(snake, apple))
+    screen.fill(BOARD_BACKGROUND_COLOR)
+
     return SPEED
 
-def get_free_rect(snake, apple= None):
+
+def get_free_rect(snake, apple=None):
+    """Определяет свободные позиции для установки яблок."""
     occupied_rect = set(snake.positions)
     if apple and apple.position:
         occupied_rect.add(apple.position)
@@ -216,7 +220,8 @@ def get_free_rect(snake, apple= None):
         for y in range(0, SCREEN_HEIGHT, GRID_SIZE):
             all_rect.add((x, y))
     free_rect = all_rect - occupied_rect
-    return free_rect            
+    return free_rect
+
 
 def main():
     """
@@ -231,41 +236,40 @@ def main():
     # Инициализация PyGame:
     # Тут нужно создать экземпляры классов.
     snake = Snake()
-    free = get_free_rect(snake)
-    apple = Apple(free)
-    free_poison = get_free_rect(snake, apple)
-    poison_apple = PoisonApple(free_poison)
+    apple = Apple(free_rect=get_free_rect(snake))
+    poison_apple = PoisonApple(free_rect=get_free_rect(snake, apple))
     current_speed = SPEED
+
     while True:
         clock.tick(current_speed)
-        screen.fill(BOARD_BACKGROUND_COLOR)
+
         handle_keys(snake)
         snake.update_direction()
         snake.move()
         # Проверка съедения обычного яблока
         if snake.get_head_position() == apple.position:
             snake.length += 1
-            free = get_free_rect(snake, poison_apple)
-            apple.randomize_position(free)
+            apple.randomize_position(get_free_rect(snake, poison_apple))
             current_speed += 1
 
         # Проверка съедения отравленного яблока
-        if snake.get_head_position() == poison_apple.position:
+        elif snake.get_head_position() == poison_apple.position:
             if snake.length > 1:
+                snake.draw()
                 snake.length -= 1
-                free = get_free_rect(snake, apple)
-                poison_apple.randomize_position(free)
+                poison_apple.randomize_position(get_free_rect(snake, apple))
                 # Удаляем последний сегмент змейки
                 if len(snake.positions) > snake.length:
                     snake.last = snake.positions.pop()
             else:
                 current_speed = game_reset(snake, apple, poison_apple)
-        if snake.get_head_position() in snake.positions[1::]:
+        elif snake.get_head_position() in snake.positions[1::]:
             current_speed = game_reset(snake, apple, poison_apple)
         apple.draw()
         poison_apple.draw()
         snake.draw()
         pg.display.update()
+
 
 if __name__ == '__main__':
     main()
